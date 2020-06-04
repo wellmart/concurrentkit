@@ -45,31 +45,36 @@ public final class ConcurrentDictionary<K: Hashable, V> {
     }
     
     public typealias Block = () -> V
-    
-    private var items: [K: Value]
+
     private let defaultBlock: Block
-    
-    private var lock = os_unfair_lock()
+
+    private var items = [K: Value]()
+    private var lock = pthread_rwlock_t()
     
     public var isEmpty: Bool {
         return items.isEmpty
     }
     
     public init(defaultValue defaultBlock: @autoclosure @escaping Block) {
-        self.items = [:]
         self.defaultBlock = defaultBlock
+        pthread_rwlock_init(&lock, nil)
     }
     
     public subscript(key: K) -> V? {
         get {
+            defer {
+                pthread_rwlock_unlock(&lock)
+            }
+
+            pthread_rwlock_rdlock(&lock)
             return items[key]?.value
         }
         set {
             defer {
-                os_unfair_lock_unlock(&lock)
+               pthread_rwlock_unlock(&lock)
             }
             
-            os_unfair_lock_lock(&lock)
+            pthread_rwlock_wrlock(&lock)
             
             guard let newValue = newValue else {
                 items.removeValue(forKey: key)
@@ -81,21 +86,28 @@ public final class ConcurrentDictionary<K: Hashable, V> {
     }
     
     public subscript(key: K) -> Value {
+        pthread_rwlock_rdlock(&lock)
+
         var value = items[key]
+        pthread_rwlock_unlock(&lock)
         
         if value == nil {
-            os_unfair_lock_lock(&lock)
+            pthread_rwlock_wrlock(&lock)
             value = items[key]
             
             if value == nil {
                 value = Value(defaultBlock())
                 items[key] = value
             }
-            
-            os_unfair_lock_unlock(&lock)
+
+            pthread_rwlock_unlock(&lock)
         }
         
         return value!
+    }
+
+    deinit {
+        pthread_rwlock_destroy(&lock)
     }
 }
 
@@ -115,7 +127,7 @@ public extension ConcurrentDictionary where V == FloatLiteralType {
             guard let value = rhs[key] else {
                 return
             }
-            
+
             lhs[key].mutate { $0 += value }
         }
     }
@@ -130,7 +142,7 @@ public extension ConcurrentDictionary where V == IntegerLiteralType {
             guard let value = rhs[key] else {
                 return
             }
-            
+
             lhs[key].mutate { $0 += value }
         }
     }
