@@ -61,7 +61,23 @@ public final class ConcurrentDictionary<K: Hashable, V> {
     }
     
     public subscript(key: K) -> V? {
-        return items[key]?.value
+        get {
+            return items[key]?.value
+        }
+        set {
+            defer {
+                os_unfair_lock_unlock(&lock)
+            }
+            
+            os_unfair_lock_lock(&lock)
+            
+            guard let newValue = newValue else {
+                items.removeValue(forKey: key)
+                return
+            }
+            
+            items[key] = Value(newValue)
+        }
     }
     
     public subscript(key: K) -> Value {
@@ -80,6 +96,13 @@ public final class ConcurrentDictionary<K: Hashable, V> {
         }
         
         return value!
+    }
+}
+
+@available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
+public extension ConcurrentDictionary {
+    func sorted(by areInIncreasingOrder: ((key: K, value: Value), (key: K, value: Value)) -> Bool) -> [Dictionary<K, Value>.Element] {
+        return items.sorted(by: areInIncreasingOrder)
     }
 }
 
