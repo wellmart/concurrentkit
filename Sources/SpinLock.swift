@@ -1,5 +1,3 @@
-// swift-tools-version:5.1
-
 //
 //  ConcurrentKit
 //
@@ -24,29 +22,18 @@
 //  THE SOFTWARE.
 //
 
-import PackageDescription
+import Foundation
 
-let package = Package(
-    name: "ConcurrentKit",
-    platforms: [
-        .macOS(.v10_12), .iOS(.v10), .tvOS(.v10), .watchOS(.v3)
-    ],
-    products: [
-        .library(
-            name: "ConcurrentKit",
-            type: .static,
-            targets: ["ConcurrentKit"])
-    ],
-    dependencies: [
-        .package(url: "https://github.com/wellmart/adrenaline.git", .branch("master"))
-    ],
-    targets: [
-        .target(
-            name: "ConcurrentKit",
-            dependencies: [
-                "Adrenaline"
-            ],
-            path: "Sources")
-    ],
-    swiftLanguageVersions: [.v5]
-)
+final class SpinLock {
+    private var lock = os_unfair_lock_s()
+    
+    @inlinable
+    func lock(execute work: () -> Void) {
+        defer {
+            os_unfair_lock_unlock(&lock)
+        }
+        
+        os_unfair_lock_lock(&lock)
+        work()
+    }
+}

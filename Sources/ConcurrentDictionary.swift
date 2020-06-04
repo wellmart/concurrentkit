@@ -24,32 +24,26 @@
 
 import Foundation
 
-@available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
 public final class ConcurrentDictionary<K: Hashable, V> {
     public final class Value {
         public private(set) var value: V
-        private var lock = os_unfair_lock()
+        private var lock = SpinLock()
         
         init(_ value: V) {
             self.value = value
         }
         
         public func mutate(_ transform: (inout V) -> ()) {
-            defer {
-                os_unfair_lock_unlock(&lock)
-            }
-            
-            os_unfair_lock_lock(&lock)
-            transform(&value)
+            lock.lock { transform(&value) }
         }
     }
     
     public typealias Block = () -> V
     
+    private var lock = ReadWriteLock()
+    
     private var items: [K: Value]
     private let defaultBlock: Block
-    
-    private var lock = pthread_rwlock_t()
     
     public var isEmpty: Bool {
         return items.isEmpty
@@ -58,66 +52,50 @@ public final class ConcurrentDictionary<K: Hashable, V> {
     public init(defaultValue defaultBlock: @autoclosure @escaping Block) {
         self.items = [:]
         self.defaultBlock = defaultBlock
-        
-        pthread_rwlock_init(&lock, nil)
     }
     
     public subscript(key: K) -> V? {
         get {
-            defer {
-                pthread_rwlock_unlock(&lock)
-            }
-            
-            pthread_rwlock_rdlock(&lock)
-            return items[key]?.value
+            return lock.read { items[key]?.value }
         }
         set {
-            defer {
-                pthread_rwlock_unlock(&lock)
+            lock.write {
+                guard let value = newValue else {
+                    items.removeValue(forKey: key)
+                    return
+                }
+                
+                items[key] = Value(value)
             }
-            
-            pthread_rwlock_wrlock(&lock)
-            
-            guard let newValue = newValue else {
-                items.removeValue(forKey: key)
-                return
-            }
-            
-            items[key] = Value(newValue)
         }
     }
     
     public subscript(key: K) -> Value {
-        pthread_rwlock_rdlock(&lock)
+        var value = lock.read { items[key] }
         
-        var value = items[key]
-        pthread_rwlock_unlock(&lock)
-        
-        if value == nil {
-            pthread_rwlock_wrlock(&lock)
-            
-            value = Value(defaultBlock())
-            items[key] = value
-            
-            pthread_rwlock_unlock(&lock)
+        if value === nil {
+            lock.write {
+                value = items[key]
+                
+                guard value === nil else {
+                    return
+                }
+                
+                value = Value(defaultBlock())
+                items[key] = value
+            }
         }
         
         return value!
     }
-    
-    deinit {
-        pthread_rwlock_destroy(&lock)
-    }
 }
 
-@available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
 public extension ConcurrentDictionary {
     func sorted(by areInIncreasingOrder: ((key: K, value: Value), (key: K, value: Value)) -> Bool) -> [Dictionary<K, Value>.Element] {
         return items.sorted(by: areInIncreasingOrder)
     }
 }
 
-@available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
 public extension ConcurrentDictionary where V == FloatLiteralType {
     static func += (lhs: ConcurrentDictionary, rhs: ConcurrentDictionary) {
         let keys = Array(rhs.items.keys)
@@ -132,7 +110,6 @@ public extension ConcurrentDictionary where V == FloatLiteralType {
     }
 }
 
-@available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
 public extension ConcurrentDictionary where V == IntegerLiteralType {
     static func += (lhs: ConcurrentDictionary, rhs: ConcurrentDictionary) {
         let keys = Array(rhs.items.keys)
@@ -147,7 +124,6 @@ public extension ConcurrentDictionary where V == IntegerLiteralType {
     }
 }
 
-@available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
 public extension ConcurrentDictionary.Value where V == FloatLiteralType {
     @inlinable
     static func += (lhs: ConcurrentDictionary.Value, rhs: V) {
@@ -155,7 +131,6 @@ public extension ConcurrentDictionary.Value where V == FloatLiteralType {
     }
 }
 
-@available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
 public extension ConcurrentDictionary.Value where V == IntegerLiteralType {
     @inlinable
     static func += (lhs: ConcurrentDictionary.Value, rhs: V) {
