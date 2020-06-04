@@ -27,7 +27,7 @@ import Foundation
 @available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
 public final class ConcurrentDictionary<K: Hashable, V> {
     public final class Value {
-        private var value: V
+        private(set) var value: V
         private var lock = os_unfair_lock()
         
         init(_ value: V) {
@@ -56,23 +56,47 @@ public final class ConcurrentDictionary<K: Hashable, V> {
         self.defaultBlock = defaultBlock
     }
     
+    public subscript(key: K) -> V? {
+        return items[key]?.value
+    }
+    
     public subscript(key: K) -> Value {
-        get {
-            var value = items[key]
+        var value = items[key]
+        
+        if value == nil {
+            os_unfair_lock_lock(&lock)
+            value = items[key]
             
             if value == nil {
-                os_unfair_lock_lock(&lock)
-                value = items[key]
-                
-                if value == nil {
-                    value = Value(defaultBlock())
-                    items[key] = value
-                }
-                
-                os_unfair_lock_unlock(&lock)
+                value = Value(defaultBlock())
+                items[key] = value
             }
             
-            return value!
+            os_unfair_lock_unlock(&lock)
+        }
+        
+        return value!
+    }
+}
+
+@available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
+public extension ConcurrentDictionary where V == FloatLiteralType {
+    static func += (lhs: ConcurrentDictionary, rhs: ConcurrentDictionary) {
+        let keys = Array(rhs.items.keys)
+        
+        keys.concurrentForEach { key in
+            lhs[key].mutate { $0 += rhs[key].value }
+        }
+    }
+}
+
+@available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
+public extension ConcurrentDictionary where V == IntegerLiteralType {
+    static func += (lhs: ConcurrentDictionary, rhs: ConcurrentDictionary) {
+        let keys = Array(rhs.items.keys)
+        
+        keys.concurrentForEach { key in
+            lhs[key].mutate { $0 += rhs[key].value }
         }
     }
 }
