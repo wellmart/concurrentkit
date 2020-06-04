@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Adrenaline",
+        "repositoryURL": "https://github.com/wellmart/adrenaline.git",
+        "state": {
+          "branch": "master",
+          "revision": "b05f389cf2cd14f2321fd778e723a230dead28e2",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}
