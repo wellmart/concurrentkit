@@ -27,7 +27,7 @@ import Foundation
 @available(macOS 10.12, iOS 10, tvOS 12, watchOS 3, *)
 public final class ConcurrentDictionary<K: Hashable, V> {
     public final class Value {
-        private(set) var value: V
+        public private(set) var value: V
         private var lock = os_unfair_lock()
         
         init(_ value: V) {
