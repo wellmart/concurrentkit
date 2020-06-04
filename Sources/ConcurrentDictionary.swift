@@ -112,7 +112,11 @@ public extension ConcurrentDictionary where V == FloatLiteralType {
         let keys = Array(rhs.items.keys)
         
         keys.concurrentForEach { key in
-            lhs[key].mutate { $0 += rhs[key].value }
+            guard let value = rhs[key] else {
+                return
+            }
+            
+            lhs[key].mutate { $0 += value }
         }
     }
 }
@@ -123,7 +127,11 @@ public extension ConcurrentDictionary where V == IntegerLiteralType {
         let keys = Array(rhs.items.keys)
         
         keys.concurrentForEach { key in
-            lhs[key].mutate { $0 += rhs[key].value }
+            guard let value = rhs[key] else {
+                return
+            }
+            
+            lhs[key].mutate { $0 += value }
         }
     }
 }
