@@ -51,6 +51,10 @@ public final class ConcurrentDictionary<K: Hashable, V> {
     
     private var lock = os_unfair_lock()
     
+    public var isEmpty: Bool {
+        return items.isEmpty
+    }
+    
     public init(defaultValue defaultBlock: @autoclosure @escaping Block) {
         self.items = [:]
         self.defaultBlock = defaultBlock
