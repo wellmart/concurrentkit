@@ -49,6 +49,10 @@ public final class ConcurrentDictionary<K: Hashable, V> {
         return items.isEmpty
     }
     
+    public var keys: [K] {
+        return Array(items.keys)
+    }
+    
     public init(defaultValue defaultBlock: @autoclosure @escaping Block) {
         self.items = [:]
         self.defaultBlock = defaultBlock
@@ -98,9 +102,7 @@ public extension ConcurrentDictionary {
 
 public extension ConcurrentDictionary where V == FloatLiteralType {
     static func += (lhs: ConcurrentDictionary, rhs: ConcurrentDictionary) {
-        let keys = Array(rhs.items.keys)
-        
-        keys.concurrentForEach { key in
+        rhs.keys.concurrentForEach { key in
             guard let value = rhs[key] else {
                 return
             }
@@ -112,9 +114,7 @@ public extension ConcurrentDictionary where V == FloatLiteralType {
 
 public extension ConcurrentDictionary where V == IntegerLiteralType {
     static func += (lhs: ConcurrentDictionary, rhs: ConcurrentDictionary) {
-        let keys = Array(rhs.items.keys)
-        
-        keys.concurrentForEach { key in
+        rhs.keys.concurrentForEach { key in
             guard let value = rhs[key] else {
                 return
             }
