@@ -26,14 +26,14 @@ import Foundation
 
 public extension Array {
     @inlinable
-    func concurrentForEach(threads: Int = 4, execute work: (Element) -> Void) {
+    func concurrentForEach(threads: Int = ProcessInfo.processInfo.activeProcessorCount, execute work: (Element) -> Void) {
         DispatchQueue.concurrentPerform(iterations: count, threads: threads) {
             work(self[$0])
         }
     }
     
     @inlinable
-    func concurrentMap<T>(threads: Int = 4, transform: (Element) -> T) -> [T] {
+    func concurrentMap<T>(threads: Int = ProcessInfo.processInfo.activeProcessorCount, transform: (Element) -> T) -> [T] {
         return Array<T>(unsafeUninitializedCapacity: count) { buffer, initializedCount in
             guard let baseAddress = buffer.baseAddress else {
                 return
