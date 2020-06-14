@@ -39,64 +39,57 @@ public final class ConcurrentDictionary<K: Hashable, V> {
     }
     
     public typealias Block = () -> V
-    
-    private var lock = ReadWriteLock()
-    
-    private var items: [K: Value]
-    private let defaultBlock: Block
+    public private(set) var dictionary: [K: Value]
     
     public var isEmpty: Bool {
-        return items.isEmpty
+        return dictionary.isEmpty
     }
     
     public var keys: [K] {
-        return Array(items.keys)
+        return Array(dictionary.keys)
     }
     
+    private var lock = ReadWriteLock()
+    private let defaultBlock: Block
+    
     public init(defaultValue defaultBlock: @autoclosure @escaping Block) {
-        self.items = [:]
+        self.dictionary = [:]
         self.defaultBlock = defaultBlock
     }
     
     public subscript(key: K) -> V? {
         get {
-            return lock.read { items[key]?.value }
+            return lock.read { dictionary[key]?.value }
         }
         set {
             lock.write {
                 guard let value = newValue else {
-                    items.removeValue(forKey: key)
+                    dictionary.removeValue(forKey: key)
                     return
                 }
                 
-                items[key] = Value(value)
+                dictionary[key] = Value(value)
             }
         }
     }
     
     public subscript(key: K) -> Value {
-        var value = lock.read { items[key] }
+        var value = lock.read { dictionary[key] }
         
         if value === nil {
             lock.write {
-                value = items[key]
+                value = dictionary[key]
                 
                 guard value === nil else {
                     return
                 }
                 
                 value = Value(defaultBlock())
-                items[key] = value
+                dictionary[key] = value
             }
         }
         
         return value!
-    }
-}
-
-public extension ConcurrentDictionary {
-    func sorted(by areInIncreasingOrder: ((key: K, value: Value), (key: K, value: Value)) -> Bool) -> [Dictionary<K, Value>.Element] {
-        return items.sorted(by: areInIncreasingOrder)
     }
 }
 
