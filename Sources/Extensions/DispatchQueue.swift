@@ -23,8 +23,19 @@
 //
 
 import Foundation
+import Adrenaline
 
 public extension DispatchQueue {
+    @inlinable
+    static func concurrentPerform(_ blocks: () -> Void...) {
+        let queue = OperationQueue().apply {
+            $0.maxConcurrentOperationCount = ProcessInfo.processInfo.activeProcessorCount
+            $0.qualityOfService = .background
+        }
+        
+        queue.addOperations(blocks.map { BlockOperation(block: $0) }, waitUntilFinished: true)
+    }
+    
     @inlinable
     static func concurrentPerform(iterations: Int, threads: Int, execute work: (_ index: Int) -> Void) {
         concurrentPerform(iterations: threads) {
