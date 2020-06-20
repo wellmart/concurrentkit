@@ -26,7 +26,7 @@ import Foundation
 import Adrenaline
 
 @inlinable
-func concurrent(_ blocks: () -> Void...) {
+public func concurrent(_ blocks: () -> Void...) {
     let queue = OperationQueue().apply {
         $0.qualityOfService = .background
     }
