@@ -27,7 +27,7 @@ import Adrenaline
 
 public extension DispatchQueue {
     @inlinable
-    static func concurrentPerform(_ blocks: () -> Void...) {
+    static func concurrent(_ blocks: () -> Void...) {
         let queue = OperationQueue().apply {
             $0.maxConcurrentOperationCount = ProcessInfo.processInfo.activeProcessorCount
             $0.qualityOfService = .background
