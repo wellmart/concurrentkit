@@ -89,7 +89,7 @@ public final class ConcurrentDictionary<K: Hashable, V> {
             }
         }
         
-        return value!
+        return value.unsafelyUnwrapped
     }
 }
 
