@@ -25,8 +25,10 @@
 import Foundation
 
 public final class SpinLock {
-    private var lock = os_unfair_lock_s()
+    @usableFromInline
+    var lock = os_unfair_lock_s()
     
+    @inlinable
     func lock(execute work: () -> Void) {
         defer {
             os_unfair_lock_unlock(&lock)
