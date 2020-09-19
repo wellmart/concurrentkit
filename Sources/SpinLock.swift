@@ -24,12 +24,12 @@
 
 import Foundation
 
-public final class SpinLock {
+final class SpinLock {
     @usableFromInline
     var lock = os_unfair_lock_s()
     
     @inlinable
-    public func lock(execute work: () -> Void) {
+    func lock(execute work: () -> Void) {
         defer {
             os_unfair_lock_unlock(&lock)
         }

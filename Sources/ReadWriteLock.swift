@@ -24,17 +24,17 @@
 
 import Foundation
 
-public final class ReadWriteLock {
+final class ReadWriteLock {
     @usableFromInline
     var lock = pthread_rwlock_t()
     
     @inlinable
-    public init() {
+    init() {
         pthread_rwlock_init(&lock, nil)
     }
     
     @inlinable
-    public func read<T>(execute work: () -> T) -> T {
+    func read<T>(execute work: () -> T) -> T {
         defer {
             pthread_rwlock_unlock(&lock)
         }
@@ -44,7 +44,7 @@ public final class ReadWriteLock {
     }
     
     @inlinable
-    public func write(execute work: () -> Void) {
+    func write(execute work: () -> Void) {
         defer {
             pthread_rwlock_unlock(&lock)
         }
