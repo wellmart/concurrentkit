@@ -1,5 +1,3 @@
-// swift-tools-version:5.3
-
 //
 //  ConcurrentKit
 //
@@ -24,29 +22,38 @@
 //  THE SOFTWARE.
 //
 
-import PackageDescription
+import Foundation
 
-let package = Package(
-    name: "ConcurrentKit",
-    platforms: [
-        .macOS(.v10_12), .iOS(.v10), .tvOS(.v10), .watchOS(.v3)
-    ],
-    products: [
-        .library(
-            name: "ConcurrentKit",
-            type: .static,
-            targets: ["ConcurrentKit"])
-    ],
-    dependencies: [
-        .package(name: "Adrenaline", url: "https://github.com/wellmart/adrenaline.git", .branch("master"))
-    ],
-    targets: [
-        .target(
-            name: "ConcurrentKit",
-            dependencies: [
-                "Adrenaline"
-            ],
-            path: "Sources")
-    ],
-    swiftLanguageVersions: [.v5]
-)
+final class ReadWriteLock {
+    @usableFromInline
+    var lock = pthread_rwlock_t()
+    
+    @inlinable
+    init() {
+        pthread_rwlock_init(&lock, nil)
+    }
+    
+    @inlinable
+    func read<T>(execute work: () -> T) -> T {
+        defer {
+            pthread_rwlock_unlock(&lock)
+        }
+        
+        pthread_rwlock_rdlock(&lock)
+        return work()
+    }
+    
+    @inlinable
+    func write(execute work: () -> Void) {
+        defer {
+            pthread_rwlock_unlock(&lock)
+        }
+        
+        pthread_rwlock_wrlock(&lock)
+        work()
+    }
+    
+    deinit {
+        pthread_rwlock_destroy(&lock)
+    }
+}

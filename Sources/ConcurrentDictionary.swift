@@ -23,7 +23,6 @@
 //
 
 import Foundation
-import Adrenaline
 
 public final class ConcurrentDictionary<K: Hashable, V> {
     public final class Value {
