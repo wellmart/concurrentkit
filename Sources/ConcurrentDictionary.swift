@@ -24,28 +24,28 @@
 
 import Foundation
 
-public final class ConcurrentDictionary<K: Hashable, V> {
+public final class ConcurrentDictionary<T: Hashable, T2> {
     public final class Value {
-        public private(set) var value: V
+        public private(set) var value: T2
         private var lock = SpinLock()
         
-        init(_ value: V) {
+        init(_ value: T2) {
             self.value = value
         }
         
-        public func mutate(_ transform: (inout V) -> ()) {
+        public func mutate(_ transform: (inout T2) -> ()) {
             lock.lock { transform(&value) }
         }
     }
     
-    public typealias Block = () -> V
-    public private(set) var dictionary: [K: Value]
+    public typealias Block = () -> T2
+    public private(set) var dictionary: [T: Value]
     
     public var isEmpty: Bool {
         return dictionary.isEmpty
     }
     
-    public var keys: [K] {
+    public var keys: [T] {
         return Array(dictionary.keys)
     }
     
@@ -57,7 +57,7 @@ public final class ConcurrentDictionary<K: Hashable, V> {
         self.defaultBlock = defaultBlock
     }
     
-    public subscript(key: K) -> V? {
+    public subscript(key: T) -> T2? {
         get {
             return lock.read { dictionary[key]?.value }
         }
@@ -73,7 +73,7 @@ public final class ConcurrentDictionary<K: Hashable, V> {
         }
     }
     
-    public subscript(key: K) -> Value {
+    public subscript(key: T) -> Value {
         var value = lock.read { dictionary[key] }
         
         if value === nil {
@@ -93,7 +93,7 @@ public final class ConcurrentDictionary<K: Hashable, V> {
     }
 }
 
-public extension ConcurrentDictionary where V == FloatLiteralType {
+public extension ConcurrentDictionary where T2 == FloatLiteralType {
     static func += (lhs: ConcurrentDictionary, rhs: ConcurrentDictionary) {
         rhs.keys.concurrentForEach { key in
             guard let value = rhs[key] else {
@@ -105,7 +105,7 @@ public extension ConcurrentDictionary where V == FloatLiteralType {
     }
 }
 
-public extension ConcurrentDictionary where V == IntegerLiteralType {
+public extension ConcurrentDictionary where T2 == IntegerLiteralType {
     static func += (lhs: ConcurrentDictionary, rhs: ConcurrentDictionary) {
         rhs.keys.concurrentForEach { key in
             guard let value = rhs[key] else {
@@ -117,16 +117,16 @@ public extension ConcurrentDictionary where V == IntegerLiteralType {
     }
 }
 
-public extension ConcurrentDictionary.Value where V == FloatLiteralType {
+public extension ConcurrentDictionary.Value where T2 == FloatLiteralType {
     @inlinable
-    static func += (lhs: ConcurrentDictionary.Value, rhs: V) {
+    static func += (lhs: ConcurrentDictionary.Value, rhs: T2) {
         lhs.mutate { $0 += rhs }
     }
 }
 
-public extension ConcurrentDictionary.Value where V == IntegerLiteralType {
+public extension ConcurrentDictionary.Value where T2 == IntegerLiteralType {
     @inlinable
-    static func += (lhs: ConcurrentDictionary.Value, rhs: V) {
+    static func += (lhs: ConcurrentDictionary.Value, rhs: T2) {
         lhs.mutate { $0 += rhs }
     }
 }
