@@ -76,11 +76,11 @@ public final class ConcurrentDictionary<T: Hashable, T2> {
     public subscript(key: T) -> Value {
         var value = lock.read { dictionary[key] }
         
-        if value === nil {
+        if value == nil {
             lock.write {
                 value = dictionary[key]
                 
-                guard value === nil else {
+                guard value == nil else {
                     return
                 }
                 
