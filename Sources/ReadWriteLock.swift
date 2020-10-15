@@ -24,7 +24,7 @@
 
 import Foundation
 
-final class ReadWriteLock {
+public final class ReadWriteLock {
     @usableFromInline
     var lock = pthread_rwlock_t()
     
