@@ -29,7 +29,7 @@ public final class ReadWriteLock {
     var lock = pthread_rwlock_t()
     
     @inlinable
-    init() {
+    public init() {
         pthread_rwlock_init(&lock, nil)
     }
     
