@@ -44,6 +44,16 @@ public final class ReadWriteLock {
     }
     
     @inlinable
+    public func read<T>(execute work: () throws -> T) rethrows -> T {
+        defer {
+            pthread_rwlock_unlock(&lock)
+        }
+        
+        pthread_rwlock_rdlock(&lock)
+        return try work()
+    }
+    
+    @inlinable
     public func write(execute work: () -> Void) {
         defer {
             pthread_rwlock_unlock(&lock)
@@ -51,6 +61,16 @@ public final class ReadWriteLock {
         
         pthread_rwlock_wrlock(&lock)
         work()
+    }
+    
+    @inlinable
+    public func write(execute work: () throws -> Void) rethrows {
+        defer {
+            pthread_rwlock_unlock(&lock)
+        }
+        
+        pthread_rwlock_wrlock(&lock)
+        try work()
     }
     
     deinit {
