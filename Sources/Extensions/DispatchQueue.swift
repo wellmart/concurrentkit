@@ -30,7 +30,7 @@ public extension DispatchQueue {
     static func concurrent(_ blocks: () -> Void...) {
         let queue = OperationQueue().apply {
             $0.maxConcurrentOperationCount = ProcessInfo.processInfo.activeProcessorCount
-            $0.qualityOfService = .utility
+            $0.qualityOfService = .userInitiated
         }
         
         queue.addOperations(blocks.map { BlockOperation(block: $0) }, waitUntilFinished: true)
