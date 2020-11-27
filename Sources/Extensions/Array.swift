@@ -35,12 +35,12 @@ public extension Array {
     @inlinable
     func concurrentMap<T>(threads: Int = ProcessInfo.processInfo.activeProcessorCount, transform: (Element) -> T) -> [T] {
         return Array<T>(unsafeUninitializedCapacity: count) { buffer, initializedCount in
-            guard let baseAddress = buffer.baseAddress else {
+            guard let unsafePointer = buffer.baseAddress else {
                 return
             }
             
             DispatchQueue.concurrentPerform(iterations: count, threads: threads) {
-                (baseAddress + $0).initialize(to: transform(self[$0]))
+                (unsafePointer + $0).initialize(to: transform(self[$0]))
             }
             
             initializedCount = count
